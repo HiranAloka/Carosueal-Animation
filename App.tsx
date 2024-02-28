@@ -1,118 +1,262 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {Dimensions, Pressable, SafeAreaView, Text, View} from 'react-native';
+import Animated, {
+  Extrapolate,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+import Carousel  from 'react-native-reanimated-carousel';
+import {withAnchorPoint} from './anchor-points';
+// import HorizantalTransacation from './HorizantalTransaction';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+export interface Props {
+  animationValue: Animated.SharedValue<number>;
+  label: number;
+  index?: number;
+  onPress?: () => void;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function App(): React.ReactElement {
+  const screenWidth = Dimensions.get('window').width;
+  const data: number[] = [...new Array(6).keys()];
+  const PAGE_WIDTH = screenWidth;
+  const PAGE_HEIGHT = screenWidth * 0.8;
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const colors = [
+    '#ff0000',
+    '#00ff00',
+    '#0000ff',
+    '#ffff00',
+    '#ff00ff',
+    '#00ffff',
+  ];
+
+  const renderItem = ({item}: {item: number}) => {
+    return (
+      <View
+        style={{
+          flex: 1,
+          borderWidth: 1,
+          justifyContent: 'center',
+          backgroundColor: colors[item],
+        }}>
+        <Text style={{textAlign: 'center', fontSize: 30}}>{item}</Text>
+      </View>
+    );
+  };
+
+  const Item: React.FC<Props> = props => {
+    const {animationValue, label, onPress} = props;
+
+    const containerStyle = useAnimatedStyle(() => {
+      const opacity = interpolate(
+        animationValue.value,
+        [-1, 0, 1],
+        [0.5, 1, 0.5],
+        Extrapolate.CLAMP,
+      );
+
+      return {
+        opacity,
+      };
+    }, [animationValue]);
+
+    const labelStyle = useAnimatedStyle(() => {
+      const scale = interpolate(animationValue.value, [-1, 0, 1], [1, 1.25, 1]);
+
+      const color = interpolateColor(
+        animationValue.value,
+        [-1, 0, 1],
+        ['#b6bbc0', '#0071fa', '#b6bbc0'],
+      );
+
+      return {
+        transform: [{scale}],
+        borderColor: color,
+      };
+    }, [animationValue]);
+
+    return (
+      <Animated.View
+        style={[
+          {
+            // flex: 1,
+            borderWidth: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: colors[label],
+            borderRadius: 50,
+            marginHorizontal: 20,
+            width: 60,
+            height: 60,
+          },
+          labelStyle,
+          containerStyle,
+        ]}>
+        <Animated.Text style={[{fontSize: 18, color: '#26292E'}]}>
+          {label}
+        </Animated.Text>
+      </Animated.View>
+    );
+  };
+
+  const Item2: React.FC<{
+    index: number;
+    animationValue: Animated.SharedValue<number>;
+  }> = ({index, animationValue}) => {
+    const WIDTH = PAGE_WIDTH / 1.5;
+    const HEIGHT = PAGE_HEIGHT / 1.5;
+
+    const cardStyle = useAnimatedStyle(() => {
+      const scale = interpolate(
+        animationValue.value,
+        [-0.1, 0, 1],
+        [0.95, 1, 1],
+        Extrapolate.CLAMP,
+      );
+
+      const translateX = interpolate(
+        animationValue.value,
+        [-1, -0.2, 0, 1],
+        [0, WIDTH * 0.3, 0, 0],
+      );
+
+      const transform = {
+        transform: [
+          {scale},
+          {translateX},
+          {perspective: 200},
+          {
+            rotateY: `${interpolate(
+              animationValue.value,
+              [-1, 0, 0.4, 1],
+              [30, 0, -25, -25],
+              Extrapolate.CLAMP,
+            )}deg`,
+          },
+        ],
+      };
+
+      return {
+        ...withAnchorPoint(
+          transform,
+          {x: 0.5, y: 0.5},
+          {width: WIDTH, height: HEIGHT},
+        ),
+      };
+    }, [index]);
+
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+        <Animated.View
+          style={[
+            {
+              backgroundColor: colors[index],
+              alignSelf: 'center',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 20,
+              width: WIDTH,
+              height: HEIGHT,
+              shadowColor: '#000',
+              shadowOffset: {
+                width: 0,
+                height: 8,
+              },
+              shadowOpacity: 0.44,
+              shadowRadius: 10.32,
+
+              elevation: 16,
+            },
+            cardStyle,
+          ]}>
+          <Animated.Text style={[{fontSize: 18, color: '#26292E'}]}>
+            {index}
+          </Animated.Text>
+        </Animated.View>
+      </Animated.View>
+    );
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
+    <SafeAreaView style={{flex: 1}}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'flex-end',
+        }}>
+        <Carousel
+          loop
+          width={75}
+          height={75}
+          data={data}
+          autoPlay
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+            width: '100%',
+            height: 100,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          scrollAnimationDuration={1000}
+          onSnapToItem={(index: number) => console.log('current index:', index)}
+          renderItem={({item, animationValue}) => {
+            return <Item animationValue={animationValue} label={item} />;
+          }}
+        />
+        <Carousel
+          loop
+          width={280}
+          height={200}
+          data={data}
+          vertical
+          modeConfig={{snapDirection: 'left', stackInterval: 20}}
+          mode="vertical-stack"
+          customConfig={() => ({type: 'positive', viewCount: 2})}
+          autoPlay
+          style={{
+            width: '100%',
+            height: 300,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          scrollAnimationDuration={1000}
+          onSnapToItem={(index: number) => console.log('current index:', index)}
+          renderItem={renderItem}
+        />
+
+        <Carousel
+          loop
+          width={PAGE_WIDTH}
+          height={PAGE_HEIGHT}
+          autoPlay
+          withAnimation={{
+            type: 'spring',
+            config: {
+              damping: 13,
+            },
+          }}
+          data={colors}
+          onSnapToItem={(index: number) => console.log('current index:', index)}
+          renderItem={({item, index, animationValue}) => {
+            return (
+              <Item2
+                animationValue={animationValue}
+                key={index}
+                index={index}
+              />
+            );
+          }}
+        />
+        {/* <HorizantalTransacation /> */}
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
